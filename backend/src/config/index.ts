@@ -9,4 +9,9 @@ export default {
   JWT_SECRET: process.env.JWT_SECRET || "secret",
   JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || "1h",
   SALT_ROUNDS: process.env.SALT_ROUNDS || 10,
+  clodunary: {
+    cloude_name: process.env.CLOUDE_NAME,
+    clodue_api_key: process.env.CLOUDE_API_KEY,
+    cloude_api_secret: process.env.CLODUE_API_SECRET,
+  },
 };
