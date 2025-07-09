@@ -5,7 +5,7 @@ export interface INote extends Document {
   content: string;
   category: Schema.Types.ObjectId;
   user: Schema.Types.ObjectId;
-  images?: string[];
+  image?: string;
   createdAt: Date;
   updatedAt: Date;
 }
