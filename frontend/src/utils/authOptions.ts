@@ -6,12 +6,12 @@ import CredentialsProvider from "next-auth/providers/credentials";
 export const authOptions: NextAuthOptions = {
   providers: [
     GithubProvider({
-      clientId: process.env.GITHUB_CLIENT_ID as string,
-      clientSecret: process.env.GITHUB_CLIENT_SECRET as string,
+      clientId: process.env.GITHUB_CLIENT_ID!,
+      clientSecret: process.env.GITHUB_CLIENT_SECRET!,
     }),
     GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID as string,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     }),
     CredentialsProvider({
       name: "Credentials",
@@ -23,7 +23,7 @@ export const authOptions: NextAuthOptions = {
         if (!credentials?.email || !credentials?.password) return null;
 
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/user/login`,
+          `${process.env.NEXT_PUBLIC_API_URL}/api/user/login`,
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -32,8 +32,15 @@ export const authOptions: NextAuthOptions = {
         );
 
         const data = await res.json();
-        // console.log({ data });
-        return res.ok ? data.data : null;
+
+        if (!res.ok || !data.data) return null;
+
+        console.log({ data: data.data.accessToken });
+
+        return {
+          ...data.data.data,
+          accessToken: data.data.accessToken,
+        };
       },
     }),
   ],
@@ -42,51 +49,87 @@ export const authOptions: NextAuthOptions = {
     signIn: "/login",
     error: "/error",
   },
+
   secret: process.env.NEXTAUTH_SECRET,
 
   callbacks: {
     async signIn({ user, account }) {
+      // Social login auto-register
+      // console.log({user})
       if (
         (account?.provider === "google" || account?.provider === "github") &&
-        user.email
+        user?.email
       ) {
         try {
           const res = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL}/user/register`,
+            `${process.env.NEXT_PUBLIC_API_URL}/api/user/register`,
             {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
                 name: user.name,
                 email: user.email,
-                image: user?.image,
+                image: user.image,
                 method: account.provider,
               }),
             }
           );
-          const data = await res.json();
 
-          (user as any).role =
-            user.email === "sauravsarkar.developer@gmail.com"
-              ? "admin"
-              : data.user?.role || "user";
+          const data = await res.json();
+          // console.log({data})
+
+          if (res.ok && data.data?.accessToken) {
+            (user as any).accessToken = data.data.accessToken;
+            (user as any).role = data.user?.role || "user";
+          } else {
+            // If already exists — login instead
+            const loginRes = await fetch(
+              `${process.env.NEXT_PUBLIC_API_URL}/api/user/login`,
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  email: user.email,
+                  password: "SOCIAL_LOGIN",
+                }),
+              }
+            );
+            const loginData = await loginRes.json();
+            // console.log({loginData})
+
+            if (loginRes.ok && loginData.data?.accessToken) {
+              (user as any).accessToken = loginData.data.accessToken;
+              (user as any).role = loginData.user?.role || "user";
+            }
+          }
         } catch (err) {
           console.error("Social login registration failed:", err);
         }
       }
+
       return true;
     },
 
     async jwt({ token, user }) {
+      // console.log({ user });
       if (user) {
-        token.user = user;
+        token.user = {
+          name: user.name,
+          email: user.email,
+          image: user.image,
+          role: (user as any).role || "user",
+        };
+
+        token.accessToken = (user as any).accessToken || token.accessToken;
       }
+
       return token;
     },
 
     async session({ session, token }) {
       if (session.user && token.user) {
-        (session.user as any).role = (token.user as any).role;
+        (session.user as any).role = (token.user as any).role || "user";
+        (session as any).accessToken = token.accessToken;
       }
       return session;
     },

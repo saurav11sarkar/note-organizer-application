@@ -1,37 +1,39 @@
-import catchAsycn from "../../utils/catchAsycn";
-import sendresponse from "../../utils/sendResponse";
+
+import catchAsync from "../../utils/catchAsycn";
+import sendResponse from "../../utils/sendResponse";
 import { categoryService } from "./category.service";
 
-const createCategory = catchAsycn(async (req, res) => {
+
+const createCategory = catchAsync(async (req, res) => {
   const result = await categoryService.createCategory(req.user?.id, req.body);
-  sendresponse(res, 201, "create category successfully", result);
+  sendResponse(res, 201, "Category created successfully", result);
 });
 
-const getCategories = catchAsycn(async (req, res) => {
+const getCategories = catchAsync(async (req, res) => {
   const result = await categoryService.getCategories(req.user?.id);
-  sendresponse(res, 200, "get categories successfully", result);
+  sendResponse(res, 200, "Categories retrieved successfully", result);
 });
 
-const updateCategory = catchAsycn(async (req, res) => {
+const updateCategory = catchAsync(async (req, res) => {
   const result = await categoryService.updateCategory(
     req.user?.id,
     req.params.id,
     req.body
   );
-  sendresponse(res, 200, "update category successfully", result);
+  sendResponse(res, 200, "Category updated successfully", result);
 });
 
-const deletedCategory = catchAsycn(async (req, res) => {
-  const result = await categoryService.deletedCategory(
+const deleteCategory = catchAsync(async (req, res) => {
+  const result = await categoryService.deleteCategory(
     req.user?.id,
     req.params.id
   );
-  sendresponse(res, 200, "deleted category successfully", result);
+  sendResponse(res, 200, "Category deleted successfully", result);
 });
 
 export const categoryController = {
   createCategory,
   getCategories,
   updateCategory,
-  deletedCategory,
+  deleteCategory,
 };

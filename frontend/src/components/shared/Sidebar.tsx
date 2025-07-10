@@ -12,6 +12,7 @@ const navLinks = [
   { href: "/", label: "Dashboard", icon: "📊" },
   { href: "/notes", label: "My Notes", icon: "📝" },
   { href: "/categories", label: "Categories", icon: "🗂️" },
+  { href: "/categories/create-category", label: "Create Category", icon: "🧑‍🏫" },
   { href: "/profile", label: "Profile", icon: "👤" },
 ];
 

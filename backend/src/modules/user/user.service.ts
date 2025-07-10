@@ -30,7 +30,7 @@ const generateTokens = (user: IUser): AuthTokens => {
     expiresIn: "7d",
   });
 
-  return { accessToken, refreshToken };
+  return { accessToken, refreshToken, user: payload };
 };
 
 const register = async (payload: IUser): Promise<AuthTokens> => {
@@ -51,28 +51,38 @@ const register = async (payload: IUser): Promise<AuthTokens> => {
     throw new AppError(400, "User creation failed");
   }
 
-  const tokens = generateTokens(user);
-  return {
-    ...tokens,
-    user,
-  };
+  return generateTokens(user);
 };
 
 const login = async (
   payload: Pick<IUser, "email" | "password">
 ): Promise<AuthTokens> => {
-  const user = await User.findOne({ email: payload.email });
+  const user = await User.findOne({ email: payload.email }).select("+password");
+
   if (!user) {
     throw new AppError(404, "User not found");
+  }
+
+  if (payload.password === "SOCIAL_LOGIN") {
+    // This is a social login attempt
+    if (user.method === "credentials") {
+      throw new AppError(401, "Please login with email and password");
+    }
+
+    return generateTokens(user);
+  }
+
+  // Normal credential-based login
+  if (user.method !== "credentials") {
+    throw new AppError(401, `Please login using ${user.method}`);
   }
 
   const isPasswordValid = await bcrypt.compare(payload.password, user.password);
   if (!isPasswordValid) {
     throw new AppError(401, "Invalid credentials");
   }
-  const tokens = generateTokens(user);
 
-  return { ...tokens, user };
+  return generateTokens(user);
 };
 
 const refreshToken = async (
@@ -88,7 +98,13 @@ const refreshToken = async (
 
     return {
       accessToken: jwt.sign(
-        { id: user._id, email: user.email, role: user.role },
+        {
+          id: user._id,
+          email: user.email,
+          role: user.role,
+          name: user.name,
+          image: user.image,
+        },
         config.JWT_SECRET,
         { algorithm: "HS256", expiresIn: "1d" }
       ),

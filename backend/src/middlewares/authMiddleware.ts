@@ -8,6 +8,16 @@ interface DecodedToken extends JwtPayload {
   id: string;
   email: string;
   role: string;
+  name: string;
+  image?: string;
+}
+
+declare global {
+  namespace Express {
+    interface Request {
+      user?: any;
+    }
+  }
 }
 
 const authMiddleware = (...requiredRoles: string[]) => {
@@ -29,6 +39,9 @@ const authMiddleware = (...requiredRoles: string[]) => {
           config.JWT_SECRET as string
         ) as DecodedToken;
       } catch (error) {
+        if (config.NODE_ENV === "development") {
+          console.error("Token verification failed:", error);
+        }
         throw new AppError(401, "Unauthorized: Invalid token");
       }
 
@@ -38,7 +51,7 @@ const authMiddleware = (...requiredRoles: string[]) => {
         throw new AppError(401, "Unauthorized: User not found");
       }
 
-      if (!requiredRoles.includes(role)) {
+      if (requiredRoles.length && !requiredRoles.includes(role)) {
         throw new AppError(403, "Forbidden: Role not authorized");
       }
 

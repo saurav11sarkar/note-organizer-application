@@ -24,7 +24,10 @@ const login = catchAsycn(async (req, res) => {
     secure: config.NODE_ENV === "production",
     sameSite: "strict",
   });
-  sendresponse(res, 200, "user login successfully", result.user);
+  sendresponse(res, 200, "user login successfully", {
+    data: result.user,
+    accessToken: result.accessToken,
+  });
 });
 
 const refeshToken = catchAsycn(async (req, res) => {

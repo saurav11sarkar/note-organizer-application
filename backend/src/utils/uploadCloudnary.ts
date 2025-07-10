@@ -1,9 +1,21 @@
 import streamifier from "streamifier";
+
+import { UploadApiResponse, UploadApiErrorResponse } from "cloudinary";
 import cloudinary from "../config/cloudanary";
 
-const uploadCloudanary = (file: Express.Multer.File) => {
+interface UploadResult {
+  url: string;
+  public_id: string;
+}
+
+const uploadCloudinary = (file: Express.Multer.File): Promise<UploadResult> => {
   return new Promise((resolve, reject) => {
-    let stream = cloudinary.uploader.upload_stream(
+    if (!file) {
+      reject(new Error("No file provided"));
+      return;
+    }
+
+    const stream = cloudinary.uploader.upload_stream(
       {
         folder: "Node",
         resource_type: "auto",
@@ -14,16 +26,23 @@ const uploadCloudanary = (file: Express.Multer.File) => {
         },
         public_id: `${Date.now()}-${file.originalname}`,
       },
-      (error, result) => {
-        if (error) {
-          reject(error);
+      (
+        error: UploadApiErrorResponse | undefined,
+        result: UploadApiResponse | undefined
+      ) => {
+        if (error || !result) {
+          reject(error || new Error("Upload failed"));
         } else {
-          resolve(result);
+          resolve({
+            url: result.secure_url,
+            public_id: result.public_id,
+          });
         }
       }
     );
+
     streamifier.createReadStream(file.buffer).pipe(stream);
   });
 };
 
-export default uploadCloudanary;
+export default uploadCloudinary;

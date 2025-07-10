@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import mongoose, { Schema } from "mongoose";
 import { IUser } from "./user.interface";
 import bcrypt from "bcryptjs";
 import config from "../../config";
