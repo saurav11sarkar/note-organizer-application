@@ -1,7 +1,7 @@
 import multer from "multer";
 
-const uploadImage = (fileName: string) => {
-  return multer({ storage: multer.memoryStorage() }).single(fileName);
+const uploadImage = (fieldName: string) => {
+  return multer({ storage: multer.memoryStorage() }).single(fieldName);
 };
 
 export default uploadImage;
