@@ -1,5 +1,6 @@
 
 import catchAsync from "../../utils/catchAsycn";
+import pick from "../../utils/pick";
 import sendResponse from "../../utils/sendResponse";
 import { categoryService } from "./category.service";
 
@@ -10,9 +11,17 @@ const createCategory = catchAsync(async (req, res) => {
 });
 
 const getCategories = catchAsync(async (req, res) => {
-  const result = await categoryService.getCategories(req.user?.id);
-  sendResponse(res, 200, "Categories retrieved successfully", result);
+  const filters = pick(req.query, ["name", "searchTerm"]);
+  const options = pick(req.query, ["sortBy", "sortOrder", "limit", "page"]);
+  const result = await categoryService.getCategories(req.user?.id,filters,options);
+  sendResponse(res, 200, "Categories retrieved successfully", result.data,result.meta);
 });
+
+const getSingleCategory = catchAsync(async (req, res) => {
+  const category = await categoryService.getSingleCategory(req.user?.id, req.params.id);
+  sendResponse(res, 200, "Category fetched successfully", category);
+});
+
 
 const updateCategory = catchAsync(async (req, res) => {
   const result = await categoryService.updateCategory(
@@ -36,4 +45,5 @@ export const categoryController = {
   getCategories,
   updateCategory,
   deleteCategory,
+  getSingleCategory
 };

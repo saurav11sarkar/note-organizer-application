@@ -1,10 +1,11 @@
-import CategoryList from "@/components/modules/CategoryList";
+
+import CategoryLists from "@/components/modules/CategoryList";
 import React from "react";
 
 const CategoryPage = () => {
   return (
     <div>
-      <CategoryList />
+      <CategoryLists />
     </div>
   );
 };
