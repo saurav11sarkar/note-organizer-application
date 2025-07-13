@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, X, LogOut, ChevronDown, ChevronUp } from "lucide-react";
-import { useSession, signOut } from "next-auth/react";
 import Image from "next/image";
 import clsx from "clsx";
+import { signOut } from "next-auth/react";
+import { useUserContext } from "@/provider/UserContext";
 
 const navLinks = [
   { href: "/", label: "Dashboard", icon: "📊" },
@@ -18,20 +19,17 @@ const navLinks = [
 
 const Sidebar = () => {
   const pathname = usePathname();
-  const { data: session } = useSession();
-  const user = session?.user;
+  const { user } = useUserContext();
+
   const [open, setOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [showUserDropdown, setShowUserDropdown] = useState(false);
 
   useEffect(() => {
     const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
-      if (window.innerWidth >= 768) {
-        setOpen(true);
-      } else {
-        setOpen(false);
-      }
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      setOpen(!mobile); // Open if desktop, close if mobile
     };
 
     handleResize();
@@ -39,14 +37,12 @@ const Sidebar = () => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const handleLogout = () => {
-    signOut({ callbackUrl: "/login" });
+  const toggleSidebar = () => {
+    if (isMobile) setOpen(!open);
   };
 
-  const toggleSidebar = () => {
-    if (isMobile) {
-      setOpen(!open);
-    }
+  const handleLogout = () => {
+    signOut({ callbackUrl: "/login" });
   };
 
   return (
@@ -56,24 +52,19 @@ const Sidebar = () => {
         <Link href="/" className="text-xl font-semibold text-blue-600">
           NoteApp
         </Link>
-        <button 
+        <button
           onClick={toggleSidebar}
           className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
           aria-label="Toggle menu"
         >
-          {open ? (
-            <X className="h-6 w-6 text-gray-600" />
-          ) : (
-            <Menu className="h-6 w-6 text-gray-600" />
-          )}
+          {open ? <X className="h-6 w-6 text-gray-600" /> : <Menu className="h-6 w-6 text-gray-600" />}
         </button>
       </div>
 
       {/* Sidebar */}
       <div
         className={clsx(
-          "fixed top-0 left-0 h-full bg-white shadow-xl w-64 z-40 transition-all duration-300 ease-in-out",
-          "border-r border-gray-200",
+          "fixed top-0 left-0 h-full bg-white shadow-xl w-64 z-40 transition-all duration-300 ease-in-out border-r border-gray-200",
           {
             "translate-x-0": open,
             "-translate-x-full": !open,
@@ -81,16 +72,17 @@ const Sidebar = () => {
           }
         )}
       >
+        {/* Logo/Header */}
         <div className="p-5 flex items-center justify-between border-b border-gray-200">
-          <Link 
-            href="/" 
+          <Link
+            href="/"
             className="text-2xl font-semibold text-blue-600 flex items-center gap-3"
             onClick={() => isMobile && setOpen(false)}
           >
             <span className="text-2xl">📒</span>
             <span>NoteApp</span>
           </Link>
-          <button 
+          <button
             className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
             onClick={() => setOpen(false)}
             aria-label="Close menu"
@@ -99,6 +91,7 @@ const Sidebar = () => {
           </button>
         </div>
 
+        {/* Navigation */}
         <nav className="mt-6 flex flex-col gap-2 px-3">
           {navLinks.map(({ href, label, icon }) => (
             <Link
@@ -119,7 +112,7 @@ const Sidebar = () => {
           ))}
         </nav>
 
-        {/* Footer User Area */}
+        {/* Footer/User Info */}
         <div className="absolute bottom-0 left-0 w-full p-5 border-t border-gray-200 bg-white">
           {user ? (
             <div className="relative">
@@ -133,14 +126,11 @@ const Sidebar = () => {
                     alt="User"
                     width={40}
                     height={40}
-                    className="rounded-full border-2 border-gray-200"
+                    className="rounded-full border-2 border-gray-200 object-cover"
                   />
                   <div className="text-left">
-                    <p className="text-sm font-semibold text-gray-900">
-                      {user.name}
-                    </p>
-                    <p className="text-xs text-gray-500 truncate max-w-[150px]">
-                      {user.email}
+                    <p className="text-sm font-semibold text-gray-900 truncate">
+                      {user.name || "User"}
                     </p>
                   </div>
                 </div>
@@ -175,14 +165,13 @@ const Sidebar = () => {
         </div>
       </div>
 
-      {/* Content padding */}
-      <div className={clsx(
-        "transition-all duration-300 ease-in-out",
-        {
+      {/* Padding to push content */}
+      <div
+        className={clsx("transition-all duration-300 ease-in-out", {
           "md:ml-64": open,
           "ml-0": !open,
-        }
-      )} />
+        })}
+      />
     </>
   );
 };

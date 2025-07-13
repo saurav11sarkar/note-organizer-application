@@ -4,6 +4,7 @@ import { Toaster } from "sonner";
 
 import { AuthProvider } from "@/provider/authProvider";
 import Sidebar from "@/components/shared/Sidebar";
+import { UserProvider } from "@/provider/UserContext";
 
 export const metadata: Metadata = {
   title: "NoteApp - Your Personal Note Taking App",
@@ -26,19 +27,20 @@ export default function RootLayout({
       </head>
       <body className={` bg-gray-50 text-gray-900`} cz-shortcut-listen="true">
         <AuthProvider>
-          <Sidebar />
-          <Toaster
-            richColors
-            position="top-center"
-            toastOptions={{
-              classNames: {
-                toast: "!font-sans",
-                title: "!font-medium",
-              },
-            }}
-          />
-          <main
-            className={`
+          <UserProvider>
+            <Sidebar />
+            <Toaster
+              richColors
+              position="top-center"
+              toastOptions={{
+                classNames: {
+                  toast: "!font-sans",
+                  title: "!font-medium",
+                },
+              }}
+            />
+            <main
+              className={`
               min-h-screen
               transition-all duration-300 ease-in-out
               ml-0 md:ml-64
@@ -46,9 +48,10 @@ export default function RootLayout({
               px-4 sm:px-6 lg:px-8
               pb-8
             `}
-          >
-            <div className="max-w-6xl mx-auto">{children}</div>
-          </main>
+            >
+              <div className="max-w-6xl mx-auto">{children}</div>
+            </main>
+          </UserProvider>
         </AuthProvider>
       </body>
     </html>

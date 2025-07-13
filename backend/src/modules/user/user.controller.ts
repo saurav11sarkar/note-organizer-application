@@ -37,8 +37,22 @@ const refeshToken = catchAsycn(async (req, res) => {
   sendresponse(res, 200, "user login successfully", result);
 });
 
+const getProfile = catchAsycn(async (req, res) => {
+  const result = await userService.getProfile(req.user.id);
+  sendresponse(res, 200, "profile fetched successfully", result);
+});
+
+const updatedProfile = catchAsycn(async (req, res) => {
+  const file = req.file as Express.Multer.File;
+  const fromdata = JSON.parse(req.body.data);
+  const result = await userService.updatedProfile(req.user.id, fromdata, file);
+  sendresponse(res, 200, "profile updated successfully", result);
+});
+
 export const userController = {
   register,
   login,
   refeshToken,
+  getProfile,
+  updatedProfile,
 };

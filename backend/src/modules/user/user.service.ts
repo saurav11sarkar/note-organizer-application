@@ -4,6 +4,8 @@ import User from "./user.model";
 import AppError from "../../error/appError";
 import jwt from "jsonwebtoken";
 import config from "../../config";
+import { profile } from "console";
+import uploadCloudinary from "../../utils/uploadCloudnary";
 
 interface AuthTokens {
   accessToken: string;
@@ -54,6 +56,38 @@ const register = async (payload: IUser): Promise<AuthTokens> => {
   return generateTokens(user);
 };
 
+// const login = async (
+//   payload: Pick<IUser, "email" | "password">
+// ): Promise<AuthTokens> => {
+//   const user = await User.findOne({ email: payload.email }).select("+password");
+
+//   if (!user) {
+//     throw new AppError(404, "User not found");
+//   }
+
+//   if (payload.password === "SOCIAL_LOGIN") {
+//     // This is a social login attempt
+//     if (user.method === "credentials") {
+//       throw new AppError(401, "Please login with email and password");
+//     }
+
+//     return generateTokens(user);
+//   }
+
+//   // Normal credential-based login
+//   if (user.method !== "credentials") {
+//     throw new AppError(401, `Please login using ${user.method}`);
+//   }
+
+//   const isPasswordValid = await bcrypt.compare(payload.password, user.password);
+//   if (!isPasswordValid) {
+//     throw new AppError(401, "Invalid credentials");
+//   }
+
+//   return generateTokens(user);
+// };
+
+
 const login = async (
   payload: Pick<IUser, "email" | "password">
 ): Promise<AuthTokens> => {
@@ -64,12 +98,23 @@ const login = async (
   }
 
   if (payload.password === "SOCIAL_LOGIN") {
-    // This is a social login attempt
+    // This is a social login attempt - return fresh data
     if (user.method === "credentials") {
       throw new AppError(401, "Please login with email and password");
     }
 
-    return generateTokens(user);
+    // Return fresh user data including any updates
+    return {
+      ...generateTokens(user),
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        image: user.image,
+        method: user.method
+      }
+    };
   }
 
   // Normal credential-based login
@@ -114,8 +159,37 @@ const refreshToken = async (
   }
 };
 
+const getProfile = async (id: string) => {
+  const user = await User.findById(id).select("-password");
+  if (!user) {
+    throw new AppError(404, "User not found");
+  }
+
+  return user;
+};
+
+const updatedProfile = async (
+  id: string,
+  payload: Partial<IUser>,
+  file?: Express.Multer.File
+) => {
+  const user = await User.findById(id);
+  if (!user) throw new AppError(404, "User not found");
+
+  if (payload.name) user.name = payload.name;
+  if (file) {
+    const img = await uploadCloudinary(file);
+    user.image = img.url;
+  }
+
+  await user.save();
+  return user;
+};
+
 export const userService = {
   register,
   login,
   refreshToken,
+  getProfile,
+  updatedProfile,
 };
