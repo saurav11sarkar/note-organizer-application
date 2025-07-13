@@ -223,7 +223,7 @@ const NoteLists = () => {
             {!searchTerm && (
               <div className="mt-6">
                 <Link
-                  href="/notes/create"
+                  href="/notes/new"
                   className="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors duration-200"
                 >
                   <FiPlus className="mr-2" />

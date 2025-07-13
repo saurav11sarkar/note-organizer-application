@@ -9,7 +9,7 @@ import { UserProvider } from "@/provider/UserContext";
 export const metadata: Metadata = {
   title: "NoteApp - Your Personal Note Taking App",
   description: "Organize your thoughts and ideas with NoteApp",
-  themeColor: "#ffffff",
+
 };
 
 export default function RootLayout({

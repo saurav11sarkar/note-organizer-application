@@ -82,7 +82,7 @@ interface DecodedToken extends JwtPayload {
 declare global {
   namespace Express {
     interface Request {
-      user?: DecodedToken;
+      user?: any | DecodedToken;
     }
   }
 }
@@ -101,7 +101,10 @@ const authMiddleware = (...requiredRoles: string[]) => {
 
       let decoded: DecodedToken;
       try {
-        decoded = jwt.verify(token, config.JWT_SECRET as string) as DecodedToken;
+        decoded = jwt.verify(
+          token,
+          config.JWT_SECRET as string
+        ) as DecodedToken;
       } catch (error) {
         if (config.NODE_ENV === "development") {
           console.error("Token verification failed:", error);
@@ -125,7 +128,7 @@ const authMiddleware = (...requiredRoles: string[]) => {
         email: user.email,
         role: user.role,
         name: user.name,
-        image: user.image
+        image: user.image,
       };
 
       next();
