@@ -2,13 +2,13 @@ import { getToken } from "next-auth/jwt";
 import { NextRequest, NextResponse } from "next/server";
 
 const authRoutes = ["/login", "/register"];
-const protectedRoutes = ["/dashboard", "/profile"];
+const protectedRoutes = ["/dashboard"];
 
 export default async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
-  const token = await getToken({ req });
+  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
 
-  // Redirect authenticated users away from auth pages
+  // If user is already logged in, redirect them away from auth pages
   if (authRoutes.includes(pathname)) {
     if (token) {
       return NextResponse.redirect(new URL("/", req.url));
@@ -16,16 +16,11 @@ export default async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // Protect routes that require authentication
+  // Protect routes
   if (protectedRoutes.some((route) => pathname.startsWith(route))) {
     if (!token) {
       return NextResponse.redirect(new URL("/login", req.url));
     }
-
-    // Add role-based checks here if needed
-    // if (pathname.startsWith("/admin") && token.role !== "admin") {
-    //   return NextResponse.redirect(new URL("/", req.url));
-    // }
   }
 
   return NextResponse.next();

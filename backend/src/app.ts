@@ -8,7 +8,14 @@ import router from "./routers/routes";
 
 const app = express();
 
-app.use(cors({ origin: "https://note-application-phi.vercel.app", credentials: true }));
+app.use(
+  cors({
+    origin: ["https://frontend-nine-wheat-31.vercel.app", "http://localhost:3000"],
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
 app.use(helmet());
 app.use(cookieParser());
 app.use(express.json());

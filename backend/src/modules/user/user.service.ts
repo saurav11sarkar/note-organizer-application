@@ -56,38 +56,6 @@ const register = async (payload: IUser): Promise<AuthTokens> => {
   return generateTokens(user);
 };
 
-// const login = async (
-//   payload: Pick<IUser, "email" | "password">
-// ): Promise<AuthTokens> => {
-//   const user = await User.findOne({ email: payload.email }).select("+password");
-
-//   if (!user) {
-//     throw new AppError(404, "User not found");
-//   }
-
-//   if (payload.password === "SOCIAL_LOGIN") {
-//     // This is a social login attempt
-//     if (user.method === "credentials") {
-//       throw new AppError(401, "Please login with email and password");
-//     }
-
-//     return generateTokens(user);
-//   }
-
-//   // Normal credential-based login
-//   if (user.method !== "credentials") {
-//     throw new AppError(401, `Please login using ${user.method}`);
-//   }
-
-//   const isPasswordValid = await bcrypt.compare(payload.password, user.password);
-//   if (!isPasswordValid) {
-//     throw new AppError(401, "Invalid credentials");
-//   }
-
-//   return generateTokens(user);
-// };
-
-
 const login = async (
   payload: Pick<IUser, "email" | "password">
 ): Promise<AuthTokens> => {
@@ -97,27 +65,15 @@ const login = async (
     throw new AppError(404, "User not found");
   }
 
+  // Social login case
   if (payload.password === "SOCIAL_LOGIN") {
-    // This is a social login attempt - return fresh data
     if (user.method === "credentials") {
       throw new AppError(401, "Please login with email and password");
     }
-
-    // Return fresh user data including any updates
-    return {
-      ...generateTokens(user),
-      user: {
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        image: user.image,
-        method: user.method
-      }
-    };
+    return generateTokens(user);
   }
 
-  // Normal credential-based login
+  // Normal login case
   if (user.method !== "credentials") {
     throw new AppError(401, `Please login using ${user.method}`);
   }

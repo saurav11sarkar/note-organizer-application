@@ -33,7 +33,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
         name: session.user.name || null,
         email: session.user.email || null,
         image: session.user.image || null,
-        role: (session.user as any).role || null,
+        role: (session.user as any).role || "user",
       });
     }
   }, [session]);

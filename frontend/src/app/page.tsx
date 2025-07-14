@@ -9,9 +9,11 @@ import { toast } from "sonner";
 interface CustomSession {
   accessToken?: string;
   user?: {
+    id?: string| null;
     name?: string | null;
     email?: string | null;
     image?: string | null;
+    role?: string | null;
   };
 }
 
@@ -20,6 +22,10 @@ export default function HomePage() {
   const session = sessionData as CustomSession | null;
   const accessToken = session?.accessToken;
   const userName = session?.user?.name || "Guest";
+
+  console.log(session?.user?.role);
+  console.log(session?.user?.id);
+  console.log(session?.accessToken);
 
   const [totalNotes, setTotalNotes] = useState<number>(0);
   const [totalCategories, setTotalCategories] = useState<number>(0);
@@ -49,8 +55,12 @@ export default function HomePage() {
         const notesData = await notesRes.json();
         const categoriesData = await categoriesRes.json();
 
-        if (!notesRes.ok) throw new Error(notesData.message || "Failed to fetch notes");
-        if (!categoriesRes.ok) throw new Error(categoriesData.message || "Failed to fetch categories");
+        if (!notesRes.ok)
+          throw new Error(notesData.message || "Failed to fetch notes");
+        if (!categoriesRes.ok)
+          throw new Error(
+            categoriesData.message || "Failed to fetch categories"
+          );
 
         setTotalNotes(notesData.meta?.total || 0);
         setTotalCategories(categoriesData.meta?.total || 0);
@@ -68,7 +78,6 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-gray-50 py-10 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto space-y-10">
-
         {/* Welcome Section */}
         <div className="bg-white p-6 sm:p-8 rounded-xl shadow-md">
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
@@ -95,7 +104,9 @@ export default function HomePage() {
             className="flex items-center justify-center gap-3 py-4 px-6 bg-white border border-gray-200 rounded-lg shadow hover:bg-gray-100 transition"
           >
             <Folder className="h-5 w-5 text-gray-700" />
-            <span className="text-sm font-medium text-gray-700">View Categories</span>
+            <span className="text-sm font-medium text-gray-700">
+              View Categories
+            </span>
           </Link>
         </div>
 
@@ -133,7 +144,9 @@ export default function HomePage() {
                 </p>
                 <p className="text-xs text-gray-500">
                   {totalCategories > 0
-                    ? `${totalCategories} categor${totalCategories > 1 ? "ies" : "y"} created`
+                    ? `${totalCategories} categor${
+                        totalCategories > 1 ? "ies" : "y"
+                      } created`
                     : "No categories yet"}
                 </p>
               </div>

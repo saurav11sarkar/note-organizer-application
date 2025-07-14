@@ -23,7 +23,7 @@ export const registerUser = async (data: {
 }): Promise<RegisterResponse> => {
   try {
     const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/api/user/register`,
+      `${process.env.NEXTAUTH_URL}/api/user/register`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
