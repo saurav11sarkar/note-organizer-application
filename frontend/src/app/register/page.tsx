@@ -4,7 +4,7 @@ import { signIn } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { registerUser } from "@/services/auth";
 
@@ -24,6 +24,11 @@ export default function RegisterPage() {
     confirmPassword: "",
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [socialLoading, setSocialLoading] = useState<
+    "github" | "google" | null
+  >(null);
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get("callbackUrl") || "/";
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -63,9 +68,45 @@ export default function RegisterPage() {
     }
   };
 
-  const handleSocialRegister = (provider: "github" | "google") => {
-    signIn(provider, { callbackUrl: "/" });
-  };
+  const handleSocialRegister = async (provider: "github" | "google") => {
+  setSocialLoading(provider);
+  try {
+    const result = await signIn(provider, { 
+      callbackUrl,
+      redirect: false 
+    });
+    
+    if (result?.error) {
+      let errorMessage = result.error;
+      
+      // Handle specific OAuth errors
+      if (result.error === "OAuthAccountNotLinked") {
+        errorMessage = "This email is already linked with another login method";
+      } else if (result.error.includes("AccessDenied")) {
+        errorMessage = "Access denied. Please try another method or contact support";
+      } else if (result.error.includes('=')) {
+        errorMessage = decodeURIComponent(result.error.split('=')[1]);
+      }
+      
+      toast.error(errorMessage);
+      return;
+    }
+    
+    // Successful authentication
+    if (result?.url) {
+      router.push(result.url);
+    } else {
+      router.push(callbackUrl);
+    }
+  } catch (error: any) {
+    console.error("Social registration error:", error);
+    toast.error(error.message || `Failed to register with ${provider}`);
+    // Consider redirecting to a specific error page with details
+    // router.push(`/error?message=${encodeURIComponent(error.message)}`);
+  } finally {
+    setSocialLoading(null);
+  }
+};
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
@@ -171,10 +212,14 @@ export default function RegisterPage() {
           <div>
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || !!socialLoading}
               className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
             >
-              {isLoading ? "Registering..." : "Register"}
+              {isLoading ? (
+                <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                "Register"
+              )}
             </button>
           </div>
         </form>
@@ -194,30 +239,44 @@ export default function RegisterPage() {
           <div className="mt-6 grid grid-cols-2 gap-3">
             <button
               onClick={() => handleSocialRegister("github")}
-              className="w-full flex justify-center items-center py-2.5 px-4 border border-gray-200 rounded-lg bg-white text-sm font-medium text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 transition-colors"
+              disabled={isLoading || !!socialLoading}
+              className="w-full flex justify-center items-center py-2.5 px-4 border border-gray-200 rounded-lg bg-white text-sm font-medium text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 transition-colors disabled:opacity-60"
             >
-              <Image
-                src="/github-icon.png"
-                alt="GitHub"
-                width={20}
-                height={20}
-                className="h-5 w-5"
-              />
-              <span className="ml-2">GitHub</span>
+              {socialLoading === "github" ? (
+                <div className="h-5 w-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <>
+                  <Image
+                    src="/github-icon.png"
+                    alt="GitHub"
+                    width={20}
+                    height={20}
+                    className="h-5 w-5"
+                  />
+                  <span className="ml-2">GitHub</span>
+                </>
+              )}
             </button>
 
             <button
               onClick={() => handleSocialRegister("google")}
-              className="w-full flex justify-center items-center py-2.5 px-4 border border-gray-200 rounded-lg bg-white text-sm font-medium text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 transition-colors"
+              disabled={isLoading || !!socialLoading}
+              className="w-full flex justify-center items-center py-2.5 px-4 border border-gray-200 rounded-lg bg-white text-sm font-medium text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 transition-colors disabled:opacity-60"
             >
-              <Image
-                src="/google-icon.png"
-                alt="Google"
-                width={20}
-                height={20}
-                className="h-5 w-5"
-              />
-              <span className="ml-2">Google</span>
+              {socialLoading === "google" ? (
+                <div className="h-5 w-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <>
+                  <Image
+                    src="/google-icon.png"
+                    alt="Google"
+                    width={20}
+                    height={20}
+                    className="h-5 w-5"
+                  />
+                  <span className="ml-2">Google</span>
+                </>
+              )}
             </button>
           </div>
         </div>

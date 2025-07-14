@@ -4,7 +4,6 @@ import User from "./user.model";
 import AppError from "../../error/appError";
 import jwt from "jsonwebtoken";
 import config from "../../config";
-import { profile } from "console";
 import uploadCloudinary from "../../utils/uploadCloudnary";
 
 interface AuthTokens {

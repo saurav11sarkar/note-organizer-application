@@ -21,6 +21,7 @@ export default function LoginPage() {
     password: "",
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [socialLoading, setSocialLoading] = useState<"github" | "google" | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -38,7 +39,7 @@ export default function LoginPage() {
       const result = await signIn("credentials", {
         email: formData.email,
         password: formData.password,
-        redirect: false, // Changed to false to handle redirect manually
+        redirect: false,
         callbackUrl,
       });
 
@@ -55,9 +56,39 @@ export default function LoginPage() {
     }
   };
 
-  const handleSocialLogin = (provider: "github" | "google") => {
-    signIn(provider, { callbackUrl });
-  };
+  const handleSocialLogin = async (provider: "github" | "google") => {
+  setSocialLoading(provider);
+  try {
+    const result = await signIn(provider, { 
+      callbackUrl,
+      redirect: false 
+    });
+    
+    if (result?.error) {
+      // Parse the error message from the URL if available
+      const errorMessage = result.error.includes('=') 
+        ? decodeURIComponent(result.error.split('=')[1])
+        : result.error;
+      
+      toast.error(errorMessage || `Failed to login with ${provider}`);
+      
+      // Don't redirect to error page - let user try again
+      return;
+    }
+    
+    // Successful login
+    if (result?.url) {
+      router.push(result.url);
+    } else {
+      router.push(callbackUrl);
+    }
+  } catch (error: any) {
+    console.error("Social login error:", error);
+    toast.error(error.message || `Failed to login with ${provider}`);
+  } finally {
+    setSocialLoading(null);
+  }
+};
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
@@ -67,7 +98,7 @@ export default function LoginPage() {
             Sign in to NoteApp
           </h2>
           <p className="mt-2 text-sm text-gray-600">
-            Don’t have an account?{" "}
+            Don&apos;t have an account?{" "}
             <Link
               href="/register"
               className="font-medium text-blue-600 hover:text-blue-700 transition-colors"
@@ -123,10 +154,14 @@ export default function LoginPage() {
           <div>
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || !!socialLoading}
               className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
             >
-              {isLoading ? "Signing in..." : "Sign in"}
+              {isLoading ? (
+                <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                "Sign in"
+              )}
             </button>
           </div>
         </form>
@@ -146,30 +181,44 @@ export default function LoginPage() {
           <div className="mt-6 grid grid-cols-2 gap-3">
             <button
               onClick={() => handleSocialLogin("github")}
-              className="w-full flex justify-center items-center py-2.5 px-4 border border-gray-200 rounded-lg bg-white text-sm font-medium text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 transition-colors"
+              disabled={isLoading || !!socialLoading}
+              className="w-full flex justify-center items-center py-2.5 px-4 border border-gray-200 rounded-lg bg-white text-sm font-medium text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 transition-colors disabled:opacity-60"
             >
-              <Image
-                src="/github-icon.png"
-                alt="GitHub"
-                width={20}
-                height={20}
-                className="h-5 w-5"
-              />
-              <span className="ml-2">GitHub</span>
+              {socialLoading === "github" ? (
+                <div className="h-5 w-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <>
+                  <Image
+                    src="/github-icon.png"
+                    alt="GitHub"
+                    width={20}
+                    height={20}
+                    className="h-5 w-5"
+                  />
+                  <span className="ml-2">GitHub</span>
+                </>
+              )}
             </button>
 
             <button
               onClick={() => handleSocialLogin("google")}
-              className="w-full flex justify-center items-center py-2.5 px-4 border border-gray-200 rounded-lg bg-white text-sm font-medium text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 transition-colors"
+              disabled={isLoading || !!socialLoading}
+              className="w-full flex justify-center items-center py-2.5 px-4 border border-gray-200 rounded-lg bg-white text-sm font-medium text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 transition-colors disabled:opacity-60"
             >
-              <Image
-                src="/google-icon.png"
-                alt="Google"
-                width={20}
-                height={20}
-                className="h-5 w-5"
-              />
-              <span className="ml-2">Google</span>
+              {socialLoading === "google" ? (
+                <div className="h-5 w-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <>
+                  <Image
+                    src="/google-icon.png"
+                    alt="Google"
+                    width={20}
+                    height={20}
+                    className="h-5 w-5"
+                  />
+                  <span className="ml-2">Google</span>
+                </>
+              )}
             </button>
           </div>
         </div>

@@ -3,8 +3,9 @@ import AppError from "../../error/appError";
 import pagenation from "../../utils/pagenation";
 import User from "../user/user.model";
 import { ICategory } from "./category.interface";
-// import { ICategory } from "./category.model";
 import Category from "./category.model";
+import mongoose from 'mongoose';
+import Note from "../note/note.model";
 
 const createCategory = async (id: string, payload: Partial<ICategory>) => {
   const user = await User.findById(id);
@@ -110,14 +111,35 @@ const updateCategory = async (
   return result;
 };
 
+
 const deleteCategory = async (userId: string, id: string) => {
   const user = await User.findById(userId);
   if (!user) throw new AppError(401, "User not found");
 
-  const result = await Category.findOneAndDelete({ _id: id, user: userId });
-  if (!result) throw new AppError(404, "Category not found");
-  return result;
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    const result = await Category.findOneAndDelete({
+      _id: id,
+      user: userId,
+    }).session(session);
+
+    if (!result) throw new AppError(404, "Category not found");
+
+    await Note.deleteMany({ category: id }).session(session);
+
+    await session.commitTransaction();
+    session.endSession();
+    return result;
+
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    throw error; // Re-throw to allow error handling in calling function
+  }
 };
+
 
 export const categoryService = {
   createCategory,

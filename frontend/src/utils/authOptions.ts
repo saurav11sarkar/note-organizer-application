@@ -24,7 +24,7 @@ export const authOptions: NextAuthOptions = {
 
         try {
           const res = await fetch(
-            `${process.env.NEXTAUTH_URL}/api/user/login`,
+            `${process.env.NEXT_PUBLIC_API_URL}/api/user/login`,
             {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -62,11 +62,14 @@ export const authOptions: NextAuthOptions = {
 
   callbacks: {
     async signIn({ user, account }) {
-      if ((account?.provider === "google" || account?.provider === "github") && user?.email) {
+      if (
+        (account?.provider === "google" || account?.provider === "github") &&
+        user?.email
+      ) {
         try {
           // Try login first
           const loginRes = await fetch(
-            `${process.env.NEXTAUTH_URL}/api/user/login`,
+            `${process.env.NEXT_PUBLIC_API_URL}/api/user/login`,
             {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -77,54 +80,58 @@ export const authOptions: NextAuthOptions = {
             }
           );
 
-          const loginData = await loginRes.json();
-
-          if (loginRes.ok && loginData.data?.accessToken) {
-            const u = loginData.data.data;
-            user.id = u._id;
-            user.name = u.name;
-            user.email = u.email;
-            user.image = u.image;
-            user.role = u.role || "user";
-            (user as any).accessToken = loginData.data.accessToken;
-            return true;
+          if (loginRes.ok) {
+            const loginData = await loginRes.json();
+            if (loginData.data?.accessToken) {
+              const u = loginData.data.data;
+              user.id = u._id;
+              user.name = u.name || user.name;
+              user.email = u.email;
+              user.image = u.image || user.image;
+              user.role = u.role || "user";
+              (user as any).accessToken = loginData.data.accessToken;
+              return true;
+            }
           }
 
           // Register fallback
           const registerRes = await fetch(
-            `${process.env.NEXTAUTH_URL}/api/user/register`,
+            `${process.env.NEXT_PUBLIC_API_URL}/api/user/register`,
             {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
-                name: user.name,
+                name: user.name || user.email.split("@")[0],
                 email: user.email,
                 image: user.image,
                 method: account.provider,
+                password: "SOCIAL_LOGIN", // Add this if your API expects it
               }),
             }
           );
 
-          const registerData = await registerRes.json();
-          if (registerRes.ok && registerData.data?.accessToken) {
-            const u = registerData.data.data;
-            user.id = u._id;
-            user.name = u.name;
-            user.email = u.email;
-            user.image = u.image;
-            user.role = u.role || "user";
-            (user as any).accessToken = registerData.data.accessToken;
-            return true;
+          if (registerRes.ok) {
+            const registerData = await registerRes.json();
+            if (registerData.data?.accessToken) {
+              const u = registerData.data.data;
+              user.id = u._id;
+              user.name = u.name;
+              user.email = u.email;
+              user.image = u.image;
+              user.role = u.role || "user";
+              (user as any).accessToken = registerData.data.accessToken;
+              return true;
+            }
           }
 
-          console.error("Social login failed:", registerData.message);
-          return false;
-        } catch (err) {
+          // If we get here, both login and register failed
+          const errorData = await registerRes.json().catch(() => ({}));
+          throw new Error(errorData.message || "Social authentication failed");
+        } catch (err: any) {
           console.error("SignIn callback error:", err);
-          return false;
+          throw new Error(err.message || "Authentication failed");
         }
       }
-
       return true;
     },
 
@@ -167,4 +174,3 @@ export const authOptions: NextAuthOptions = {
     },
   },
 };
-
