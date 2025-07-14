@@ -77,8 +77,7 @@ const CategoryLists = () => {
         }
 
         setCategories(data.data);
-        
-        // Handle pagination meta data safely
+
         const totalItems = data.meta?.total || data.data.length;
         setTotalPages(Math.ceil(totalItems / itemsPerPage));
       } catch (error: any) {
@@ -98,30 +97,41 @@ const CategoryLists = () => {
 
   const handleDelete = async (id: string) => {
     if (!session?.accessToken) return;
-    if (!confirm("Are you sure you want to delete this category?")) return;
 
-    try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/category/${id}`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${session.accessToken}`,
-          },
-        }
-      );
+    toast("Are you sure you want to delete this category?", {
+      description: "This will also delete all notes under this category.",
+      action: {
+        label: "Delete",
+        onClick: async () => {
+          try {
+            const res = await fetch(
+              `${process.env.NEXT_PUBLIC_API_URL}/api/category/${id}`,
+              {
+                method: "DELETE",
+                headers: {
+                  Authorization: `Bearer ${session.accessToken}`,
+                },
+              }
+            );
 
-      const data = await res.json();
+            const data = await res.json();
 
-      if (!res.ok || !data.success) {
-        throw new Error(data.message || "Failed to delete category");
-      }
+            if (!res.ok || !data.success) {
+              throw new Error(data.message || "Failed to delete category");
+            }
 
-      setCategories(categories.filter((cat) => cat._id !== id));
-      toast.success(data.message || "Category deleted successfully");
-    } catch (error: any) {
-      toast.error(error.message || "Error deleting category");
-    }
+            setCategories((prev) => prev.filter((cat) => cat._id !== id));
+            toast.success("Category and all associated notes deleted successfully.");
+          } catch (error: any) {
+            toast.error(error.message || "Error deleting category");
+          }
+        },
+      },
+      cancel: {
+        label: "Cancel",
+        onClick: () => {},
+      },
+    });
   };
 
   const handlePreviousPage = () => {
@@ -138,20 +148,14 @@ const CategoryLists = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <FiLoader className="animate-spin text-4xl text-indigo-600" />
-          <p className="text-gray-600">Loading categories...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
+      {loading ? (
+        <div className="flex justify-center items-center h-40">
+          <FiLoader className="animate-spin text-indigo-600" size={32} />
+        </div>
+      ) : (
+        <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Categories</h1>
@@ -377,6 +381,7 @@ const CategoryLists = () => {
           </div>
         )}
       </div>
+      )}
     </div>
   );
 };
