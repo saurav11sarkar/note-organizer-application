@@ -31,7 +31,7 @@ Note Organizer is a full-stack application that helps you capture, organize, and
 
 ## Live Demo 🌐
 
-👉 [Frontend Deployment](https://frontend-nine-wheat-31.vercel.app)  
+👉 [Deployment Link](https://frontend-nine-wheat-31.vercel.app)  
 👉 [Backend API](https://note-backend-pink.vercel.app)
 
 ## Technology Stack 🛠️
